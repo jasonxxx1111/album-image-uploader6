@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>光塑星河 - 亚克力相册定制</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <style>
+        /* 样式保持不变 */
+    </style>
+</head>
+<body>
+    <!-- 管理员登录弹窗 -->
+    <div class="admin-login-section" id="admin-login">
+        <div class="admin-login-box">
+            <h2>
+                <i class="fas fa-key key-icon"></i>
+                管理员登录
+            </h2>
+            <div class="form-group">
+                <label for="admin-password">管理员密钥</label>
+                <input type="password" id="admin-password" class="form-control" placeholder="请输入管理员密钥">
+            </div>
+            <button id="admin-login-btn" class="btn btn-block admin-login-btn">
+                <i class="fas fa-sign-in-alt"></i> 登录管理后台
+            </button>
+            <div style="margin-top: 20px; color: var(--gray); font-size: 0.9rem;">
+                <i class="fas fa-info-circle"></i> 请联系网站管理员获取密钥
+            </div>
+        </div>
+    </div>
+    
+    <div class="container">
+        <header>
+            <div class="logo-container">
+                <div class="logo">
+                    <div class="logo-icon">
+                        <i class="fas fa-images"></i>
+                    </div>
+                    <span>光塑星河</span>
+                </div>
+                <p class="tagline">上传您的专辑照片，我们将为您制作精美的亚克力相册</p>
+            </div>
+        </header>
+        
+        <div class="step-indicator">
+            <div class="step completed">
+                <div class="step-number">1</div>
+                <div class="step-text">验证订单</div>
+            </div>
+            <div class="step active">
+                <div class="step-number">2</div>
+                <div class="step-text">上传图片</div>
+            </div>
+            <div class="step">
+                <div class="step-number">3</div>
+                <div class="step-text">裁剪图片</div>
+            </div>
+            <div class="step">
+                <div class="step-number">4</div>
+                <div class="step-text">确认提交</div>
+            </div>
+        </div>
+        
+        <div class="main-content">
+            <div class="left-column">
+                <div class="card">
+                    <h2 class="card-title">
+                        <i class="fas fa-receipt"></i>
+                        订单验证
+                    </h2>
+                    
+                    <div class="order-id-display" id="order-display" style="display: none;">
+                        <i class="fas fa-check-circle" style="color: var(--success); margin-right: 10px;"></i>
+                        已验证订单号: <span id="order-id-text"></span>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="order-id">订单号</label>
+                        <input type="text" id="order-id" class="form-control" placeholder="请输入您的19位订单号" maxlength="19">
+                        <small style="display: block; margin-top: 8px; color: var(--gray);">示例有效订单号: 4655492316613153020</small>
+                    </div>
+                    
+                    <button id="verify-order" class="btn btn-block">验证订单</button>
+                </div>
+                
+                <div class="card">
+                    <h2 class="card-title">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        上传图片 <span class="ratio-indicator">32mm × 35mm</span>
+                    </h2>
+                    
+                    <div class="instructions">
+                        <h3><i class="fas fa-info-circle"></i> 上传要求</h3>
+                        <ul>
+                            <li>请上传高质量图片（建议分辨率300dpi以上）</li>
+                            <li>支持格式：JPG, PNG, GIF</li>
+                            <li>每张图片大小不超过5MB</li>
+                            <li>一次最多可上传100张图片</li>
+                            <li>系统会自动裁剪为32mm×35mm比例</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="progress-container">
+                        <div class="progress-bar" id="upload-progress"></div>
+                    </div>
+                    
+                    <div class="upload-area" id="upload-area" style="opacity: 0.5; pointer-events: none;">
+                        <div class="upload-icon">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                        </div>
+                        <div class="upload-text">拖放图片到此处或点击上传</div>
+                        <div class="upload-hint">支持批量上传，最多100张图片</div>
+                        <input type="file" id="file-input" multiple accept="image/*">
+                    </div>
+                    
+                    <div id="preview-container" class="preview-container" style="display:none;">
+                        <!-- 图片预览将在这里动态生成 -->
+                    </div>
+                    
+                    <div class="image-counter" id="image-counter" style="display: none;">
+                        已上传 <span id="image-count">0</span> 张图片
+                    </div>
+                    
+                    <div class="form-group" style="margin-top: 20px; display: none;" id="submit-section">
+                        <button id="submit-btn" class="btn btn-success btn-block">
+                            <i class="fas fa-check-circle"></i> 确认提交所有图片
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="right-column">
+                <div class="card">
+                    <h2 class="card-title">
+                        <i class="fas fa-crop-alt"></i>
+                        图片裁剪
+                    </h2>
+                    
+                    <div class="dimension-info">
+                        <div class="dimension-card">
+                            <h4>裁剪尺寸</h4>
+                            <p>32×35mm</p>
+                        </div>
+                        <div class="dimension-card">
+                            <h4>比例</h4>
+                            <p>竖版</p>
+                        </div>
+                    </div>
+                    
+                    <div id="crop-section" style="display: none;">
+                        <div class="crop-container">
+                            <img id="crop-image" src="" alt="待裁剪图片">
+                        </div>
+                        
+                        <div class="image-counter">
+                            图片 <span id="current-image">1</span> / <span id="total-images">1</span>
+                        </div>
+                        
+                        <div class="crop-preview-container">
+                            <div class="crop-preview">
+                                <img id="crop-preview" src="" alt="裁剪预览">
+                            </div>
+                        </div>
+                        
+                        <div class="nav-buttons">
+                            <button id="prev-btn" class="btn">
+                                <i class="fas fa-arrow-left"></i> 上一张
+                            </button>
+                            <button id="crop-btn" class="btn btn-warning">
+                                <i class="fas fa-crop-alt"></i> 确认裁剪
+                            </button>
+                            <button id="next-btn" class="btn">
+                                下一张 <i class="fas fa-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="crop-placeholder" style="text-align: center; padding: 40px 20px;">
+                        <i class="fas fa-crop-alt" style="font-size: 4rem; color: #e9ecef; margin-bottom: 20px;"></i>
+                        <p style="color: #6c757d; font-size: 1.1rem;">请先上传图片以开始裁剪</p>
+                    </div>
+                </div>
+                
+                <!-- 管理员面板 -->
+                <div class="card admin-section">
+                    <h2 class="card-title">
+                        <i class="fas fa-tools"></i>
+                        后台管理
+                    </h2>
+                    
+                    <div class="admin-actions" id="admin-actions">
+                        <div class="admin-controls">
+                            <button id="download-all" class="btn admin-btn">
+                                <i class="fas fa-download"></i> 一键下载所有图片
+                            </button>
+                            <button id="view-orders" class="btn admin-btn">
+                                <i class="fas fa-list"></i> 查看所有订单
+                            </button>
+                            <button id="process-images" class="btn admin-btn btn-success">
+                                <i class="fas fa-cogs"></i> 处理图片并发送到工厂
+                            </button>
+                            <button id="admin-logout" class="btn admin-btn btn-warning">
+                                <i class="fas fa-sign-out-alt"></i> 退出管理
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="admin-panel" class="admin-panel">
+                        <div class="form-group">
+                            <label for="admin-key">管理员密钥</label>
+                            <input type="password" id="admin-key" class="form-control" placeholder="请输入管理员密钥">
+                        </div>
+                        
+                        <button id="admin-access" class="btn btn-block">
+                            <i class="fas fa-lock"></i> 进入管理后台
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>© 2023 光塑星河 - 亚克力相册定制服务</p>
+            <p>图片上传与裁剪系统 v1.0 | 专业为音乐专辑定制亚克力艺术品</p>
+        </footer>
+    </div>
+
+    <script>
+        // 模拟数据库
+        const ordersDB = {
+            '4655492316613153020': {
+                verified: false,
+                images: []
+            },
+            '1234567890123456789': {
+                verified: false,
+                images: []
+            },
+            '9876543210987654321': {
+                verified: false,
+                images: []
+            }
+        };
+        
+        // 当前状态
+        const state = {
+            currentOrder: null,
+            uploadedImages: [],
+            currentImageIndex: 0,
+            cropper: null,
+            isAdmin: false,
+            adminKey: "gsxh2023", // 默认管理员密钥
+            cropRatio: 32/35,     // 竖版比例 (宽/高)
+            cropWidth: 320,       // 像素 (10倍放大)
+            cropHeight: 350       // 像素 (10倍放大)
+        };
+        
+        // DOM元素
+        const elements = {
+            orderInput: document.getElementById('order-id'),
+            orderDisplay: document.getElementById('order-display'),
+            orderIdText: document.getElementById('order-id-text'),
+            verifyBtn: document.getElementById('verify-order'),
+            uploadArea: document.getElementById('upload-area'),
+            fileInput: document.getElementById('file-input'),
+            previewContainer: document.getElementById('preview-container'),
+            imageCounter: document.getElementById('image-counter'),
+            imageCount: document.getElementById('image-count'),
+            cropSection: document.getElementById('crop-section'),
+            cropPlaceholder: document.getElementById('crop-placeholder'),
+            cropImage: document.getElementById('crop-image'),
+            cropPreview: document.getElementById('crop-preview'),
+            cropBtn: document.getElementById('crop-btn'),
+            prevBtn: document.getElementById('prev-btn'),
+            nextBtn: document.getElementById('next-btn'),
+            submitSection: document.getElementById('submit-section'),
+            submitBtn: document.getElementById('submit-btn'),
+            downloadAllBtn: document.getElementById('download-all'),
+            currentImage: document.getElementById('current-image'),
+            totalImages: document.getElementById('total-images'),
+            uploadProgress: document.getElementById('upload-progress'),
+            adminPanel: document.getElementById('admin-panel'),
+            adminActions: document.getElementById('admin-actions'),
+            adminAccessBtn: document.getElementById('admin-access'),
+            adminLoginSection: document.getElementById('admin-login'),
+            adminLoginBtn: document.getElementById('admin-login-btn'),
+            adminPassword: document.getElementById('admin-password'),
+            adminLogout: document.getElementById('admin-logout'),
+            adminKeyInput: document.getElementById('admin-key')
+        };
+        
+        // 初始化
+        function init() {
+            // 检查登录状态
+            if (localStorage.getItem('isAdmin') === 'true') {
+                state.isAdmin = true;
+                elements.adminPanel.style.display = 'none';
+                elements.adminActions.style.display = 'block';
+            }
+            
+            // 事件监听器
+            elements.verifyBtn.addEventListener('click', verifyOrder);
+            elements.uploadArea.addEventListener('click', () => elements.fileInput.click());
+            elements.fileInput.addEventListener('change', handleFileUpload);
+            elements.prevBtn.addEventListener('click', showPrevImage);
+            elements.nextBtn.addEventListener('click', showNextImage);
+            elements.cropBtn.addEventListener('click', confirmCrop);
+            elements.submitBtn.addEventListener('click', submitImages);
+            elements.downloadAllBtn.addEventListener('click', downloadAllImages);
+            elements.adminAccessBtn.addEventListener('click', showAdminLogin);
+            elements.adminLoginBtn.addEventListener('click', adminLogin);
+            elements.adminLogout.addEventListener('click', adminLogout);
+            
+            // 拖放功能
+            elements.uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                elements.uploadArea.style.borderColor = 'var(--primary-dark)';
+                elements.uploadArea.style.backgroundColor = 'rgba(106, 90, 205, 0.1)';
+            });
+            
+            elements.uploadArea.addEventListener('dragleave', () => {
+                elements.uploadArea.style.borderColor = 'var(--primary)';
+                elements.uploadArea.style.backgroundColor = 'rgba(106, 90, 205, 0.05)';
+            });
+            
+            elements.uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                elements.uploadArea.style.borderColor = 'var(--primary)';
+                elements.uploadArea.style.backgroundColor = 'rgba(106, 90, 205, 0.05)';
+                
+                if (e.dataTransfer.files.length) {
+                    elements.fileInput.files = e.dataTransfer.files;
+                    handleFileUpload();
+                }
+            });
+        }
+        
+        // 启用上传功能
+        function enableUpload() {
+            elements.uploadArea.style.opacity = "1";
+            elements.uploadArea.style.pointerEvents = "auto";
+        }
+        
+        // 验证订单
+        function verifyOrder() {
+            const orderId = elements.orderInput.value.trim();
+            
+            if (!orderId) {
+                showAlert('请输入订单号', 'danger');
+                return;
+            }
+            
+            if (orderId.length !== 19) {
+                showAlert('订单号必须是19位数字', 'danger');
+                return;
+            }
+            
+            if (ordersDB[orderId]) {
+                state.currentOrder = orderId;
+                ordersDB[orderId].verified = true;
+                showAlert('订单验证成功！您现在可以上传图片', 'success');
+                
+                // 更新UI
+                elements.orderDisplay.style.display = 'block';
+                elements.orderIdText.textContent = orderId;
+                elements.verifyBtn.textContent = '已验证';
+                elements.verifyBtn.disabled = true;
+                elements.verifyBtn.style.backgroundColor = 'var(--success)';
+                
+                // 启用上传区域
+                enableUpload();
+            } else {
+                showAlert('无效的订单号，请检查后重试', 'danger');
+            }
+        }
+        
+        // 处理文件上传
+        function handleFileUpload() {
+            if (!state.currentOrder) {
+                showAlert('请先验证您的订单', 'danger');
+                return;
+            }
+            
+            const files = elements.fileInput.files;
+            if (files.length === 0) return;
+            
+            if (files.length > 100) {
+                showAlert('一次最多只能上传100张图片', 'danger');
+                return;
+            }
+            
+            // 清空预览容器
+            elements.previewContainer.innerHTML = '';
+            state.uploadedImages = [];
+            
+            // 显示上传进度
+            elements.uploadProgress.style.width = '0%';
+            
+            let loaded = 0;
+            
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                if (!file.type.match('image.*')) continue;
+                
+                const reader = new FileReader();
+                
+                reader.onload = (e) => {
+                    const imageData = {
+                        id: Date.now() + i,
+                        name: file.name,
+                        src: e.target.result,
+                        cropped: false,
+                        croppedData: null
+                    };
+                    
+                    state.uploadedImages.push(imageData);
+                    createImagePreview(imageData);
+                    
+                    // 更新进度条
+                    loaded++;
+                    elements.uploadProgress.style.width = `${(loaded / files.length) * 100}%`;
+                    
+                    // 更新图片计数器
+                    elements.imageCount.textContent = state.uploadedImages.length;
+                    
+                    // 如果是第一张图片，显示裁剪区域
+                    if (state.uploadedImages.length === 1) {
+                        showCropSection();
+                        loadImageForCrop(0);
+                    }
+                    
+                    // 显示预览区域
+                    if (state.uploadedImages.length > 0) {
+                        elements.previewContainer.style.display = 'grid';
+                        elements.submitSection.style.display = 'block';
+                        elements.imageCounter.style.display = 'block';
+                    }
+                };
+                
+                reader.readAsDataURL(file);
+            }
+        }
+        
+        // 创建图片预览
+        function createImagePreview(imageData) {
+            const previewCard = document.createElement('div');
+            previewCard.className = 'preview-card';
+            previewCard.innerHTML = `
+                <div class="preview-header">
+                    <span class="truncate">${imageData.name}</span>
+                    ${imageData.cropped ? '<span class="ratio-indicator">已裁剪</span>' : '<span style="color:var(--warning);">待裁剪</span>'}
+                </div>
+                <div class="preview-image-container">
+                    <img src="${imageData.src}" class="preview-image" alt="${imageData.name}">
+                </div>
+                <div class="preview-actions">
+                    <div class="preview-btn crop-btn" data-id="${imageData.id}">
+                        <i class="fas fa-crop-alt"></i> 裁剪
+                    </div>
+                    <div class="preview-btn delete-btn" data-id="${imageData.id}">
+                        <i class="fas fa-trash"></i> 删除
+                    </div>
+                </div>
+            `;
+            
+            elements.previewContainer.appendChild(previewCard);
+            
+            // 添加事件监听
+            previewCard.querySelector('.crop-btn').addEventListener('click', () => {
+                const index = state.uploadedImages.findIndex(img => img.id === imageData.id);
+                if (index !== -1) {
+                    state.currentImageIndex = index;
+                    loadImageForCrop(index);
+                }
+            });
+            
+            previewCard.querySelector('.delete-btn').addEventListener('click', () => {
+                const index = state.uploadedImages.findIndex(img => img.id === imageData.id);
+                if (index !== -1) {
+                    state.uploadedImages.splice(index, 1);
+                    elements.previewContainer.removeChild(previewCard);
+                    
+                    // 更新图片计数器
+                    elements.imageCount.textContent = state.uploadedImages.length;
+                    
+                    if (state.uploadedImages.length === 0) {
+                        elements.previewContainer.style.display = 'none';
+                        elements.submitSection.style.display = 'none';
+                        elements.imageCounter.style.display = 'none';
+                        elements.cropSection.style.display = 'none';
+                        elements.cropPlaceholder.style.display = 'block';
+                    } else {
+                        // 如果删除的是当前正在裁剪的图片，加载第一张
+                        if (index === state.currentImageIndex) {
+                            loadImageForCrop(0);
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 显示裁剪区域
+        function showCropSection() {
+            elements.cropSection.style.display = 'block';
+            elements.cropPlaceholder.style.display = 'none';
+        }
+        
+        // 加载图片进行裁剪
+        function loadImageForCrop(index) {
+            if (state.cropper) {
+                state.cropper.destroy();
+            }
+            
+            const image = state.uploadedImages[index];
+            elements.cropImage.onload = function() {
+                state.cropper = new Cropper(elements.cropImage, {
+                    aspectRatio: state.cropRatio,
+                    viewMode: 1,
+                    preview: elements.cropPreview,
+                    autoCropArea: 0.8,
+                    background: false,
+                    guides: true,
+                    highlight: true,
+                    dragMode: 'move'
+                });
+            };
+            elements.cropImage.src = image.src;
+            elements.cropPreview.src = image.croppedData || image.src;
+            
+            // 更新计数器
+            elements.currentImage.textContent = index + 1;
+            elements.totalImages.textContent = state.uploadedImages.length;
+        }
+        
+        // 显示上一张图片
+        function showPrevImage() {
+            if (state.currentImageIndex > 0) {
+                state.currentImageIndex--;
+                loadImageForCrop(state.currentImageIndex);
+            }
+        }
+        
+        // 显示下一张图片
+        function showNextImage() {
+            if (state.currentImageIndex < state.uploadedImages.length - 1) {
+                state.currentImageIndex++;
+                loadImageForCrop(state.currentImageIndex);
+            }
+        }
+        
+        // 确认裁剪
+        function confirmCrop() {
+            if (!state.cropper) return;
+            
+            // 使用竖版尺寸
+            const canvas = state.cropper.getCroppedCanvas({
+                width: state.cropWidth,
+                height: state.cropHeight
+            });
+            
+            const croppedData = canvas.toDataURL('image/jpeg');
+            state.uploadedImages[state.currentImageIndex].croppedData = croppedData;
+            state.uploadedImages[state.currentImageIndex].cropped = true;
+            
+            // 更新预览
+            updatePreviewAfterCrop(state.uploadedImages[state.currentImageIndex].id);
+            
+            showAlert('图片裁剪成功！', 'success');
+            
+            // 自动跳转到下一张
+            if (state.currentImageIndex < state.uploadedImages.length - 1) {
+                setTimeout(() => {
+                    state.currentImageIndex++;
+                    loadImageForCrop(state.currentImageIndex);
+                }, 1000);
+            }
+        }
+        
+        // 更新裁剪后的预览
+        function updatePreviewAfterCrop(id) {
+            const previewCards = elements.previewContainer.querySelectorAll('.preview-card');
+            for (const card of previewCards) {
+                const btn = card.querySelector('.crop-btn');
+                if (btn && parseInt(btn.dataset.id) === id) {
+                    const header = card.querySelector('.preview-header');
+                    header.innerHTML = `
+                        <span class="truncate">${state.uploadedImages.find(img => img.id === id).name}</span>
+                        <span class="ratio-indicator">已裁剪</span>
+                    `;
+                    break;
+                }
+            }
+        }
+        
+        // 提交所有图片
+        function submitImages() {
+            if (!state.uploadedImages.length) {
+                showAlert('请先上传图片', 'danger');
+                return;
+            }
+            
+            // 检查是否所有图片都已裁剪
+            const allCropped = state.uploadedImages.every(img => img.cropped);
+            if (!allCropped) {
+                const uncropped = state.uploadedImages.filter(img => !img.cropped).length;
+                showAlert(`还有 ${uncropped} 张图片未裁剪，请完成裁剪后再提交`, 'danger');
+                return;
+            }
+            
+            // 保存到数据库
+            ordersDB[state.currentOrder].images = state.uploadedImages.map(img => {
+                return {
+                    ...img,
+                    finalData: img.croppedData
+                };
+            });
+            
+            showAlert('所有图片已成功提交！工厂将开始制作您的亚克力相册', 'success');
+            
+            // 重置表单
+            setTimeout(() => {
+                state.uploadedImages = [];
+                elements.previewContainer.innerHTML = '';
+                elements.previewContainer.style.display = 'none';
+                elements.submitSection.style.display = 'none';
+                elements.imageCounter.style.display = 'none';
+                elements.cropSection.style.display = 'none';
+                elements.cropPlaceholder.style.display = 'block';
+                elements.fileInput.value = '';
+                elements.uploadProgress.style.width = '0%';
+            }, 3000);
+        }
+        
+        // 一键下载所有图片
+        function downloadAllImages() {
+            if (!state.currentOrder) {
+                showAlert('请先验证订单', 'danger');
+                return;
+            }
+            
+            const order = ordersDB[state.currentOrder];
+            if (!order.images || order.images.length === 0) {
+                showAlert('此订单没有图片可下载', 'danger');
+                return;
+            }
+            
+            const zip = new JSZip();
+            const imgFolder = zip.folder(`${state.currentOrder}_images`);
+            
+            order.images.forEach((img, index) => {
+                if (img.finalData) {
+                    const base64Data = img.finalData.replace(/^data:image\/jpeg;base64,/, "");
+                    imgFolder.file(`image_${index + 1}.jpg`, base64Data, {base64: true});
+                }
+            });
+            
+            zip.generateAsync({type: "blob"}).then(blob => {
+                saveAs(blob, `${state.currentOrder}_images.zip`);
+                showAlert('所有图片已打包下载完成！', 'success');
+            });
+        }
+        
+        // 管理员登录
+        function adminLogin() {
+            const inputKey = elements.adminPassword.value;
+            if (inputKey === state.adminKey) {
+                state.isAdmin = true;
+                localStorage.setItem('isAdmin', 'true');
+                showAlert('管理员登录成功！', 'success');
+                elements.adminLoginSection.style.display = 'none';
+                
+                // 显示管理员功能
+                elements.adminPanel.style.display = 'none';
+                elements.adminActions.style.display = 'block';
+            } else {
+                showAlert('管理员密钥错误', 'danger');
+            }
+        }
+        
+        // 管理员登出
+        function adminLogout() {
+            state.isAdmin = false;
+            localStorage.removeItem('isAdmin');
+            showAlert('您已退出管理后台', 'success');
+            elements.adminPanel.style.display = 'block';
+            elements.adminActions.style.display = 'none';
+        }
+        
+        // 显示管理员登录界面
+        function showAdminLogin() {
+            const inputKey = elements.adminKeyInput.value;
+            if (inputKey === state.adminKey) {
+                // 直接登录
+                state.isAdmin = true;
+                localStorage.setItem('isAdmin', 'true');
+                showAlert('管理员登录成功！', 'success');
+                elements.adminPanel.style.display = 'none';
+                elements.adminActions.style.display = 'block';
+            } else {
+                // 显示登录弹窗
+                elements.adminLoginSection.style.display = 'flex';
+                elements.adminPassword.value = '';
+            }
+        }
+        
+        // 显示提示信息
+        function showAlert(message, type) {
+            // 移除现有的提示
+            const existingAlert = document.querySelector('.alert');
+            if (existingAlert) existingAlert.remove();
+            
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+                <span>${message}</span>
+            `;
+            
+            document.querySelector('.main-content').insertBefore(alertDiv, document.querySelector('.card'));
+            
+            // 3秒后自动消失
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.parentNode.removeChild(alertDiv);
+                }
+            }, 3000);
+        }
+        
+        // 页面加载完成后初始化
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
